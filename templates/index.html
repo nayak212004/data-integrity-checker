@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Blockchain App</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #1e1e2f;
+      color: #ffffff;
+      margin: 0;
+      padding: 0;
+    }
+
+    header {
+      background: #282c34;
+      padding: 1em;
+      text-align: center;
+      font-size: 1.5em;
+    }
+
+    main {
+      padding: 2em;
+      max-width: 800px;
+      margin: auto;
+    }
+
+    input[type="text"] {
+      width: 80%;
+      padding: 10px;
+      font-size: 1em;
+      border-radius: 5px;
+      border: none;
+    }
+
+    button {
+      padding: 10px 15px;
+      margin-left: 10px;
+      font-size: 1em;
+      border: none;
+      border-radius: 5px;
+      background: #61dafb;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #21a1f1;
+    }
+
+    .block {
+      background: #2e3240;
+      margin-top: 1em;
+      padding: 1em;
+      border-radius: 5px;
+    }
+
+    .status {
+      margin-top: 1em;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    Simple Blockchain App
+  </header>
+  <main>
+    <h2>Add New Block</h2>
+    <input type="text" id="blockData" placeholder="Enter block data" />
+    <button onclick="addBlock()">Add</button>
+    <div id="status" class="status"></div>
+
+    <h2>Blockchain</h2>
+    <button onclick="loadChain()">Refresh Chain</button>
+    <div id="chain"></div>
+
+    <h2>Check Chain Integrity</h2>
+    <button onclick="checkChain()">Check</button>
+    <div id="integrity" class="status"></div>
+  </main>
+
+  <script>
+    function loadChain() {
+      fetch('/blocks')
+        .then(res => res.json())
+        .then(data => {
+          const container = document.getElementById('chain');
+          container.innerHTML = '';
+          data.forEach(block => {
+            const div = document.createElement('div');
+            div.className = 'block';
+            div.innerHTML = `
+              <strong>Index:</strong> ${block.index}<br>
+              <strong>Timestamp:</strong> ${new Date(block.timestamp * 1000).toLocaleString()}<br>
+              <strong>Data:</strong> ${block.data}<br>
+              <strong>Hash:</strong> ${block.hash}<br>
+              <strong>Prev Hash:</strong> ${block.previousHash}
+            `;
+            container.appendChild(div);
+          });
+        });
+    }
+
+    function addBlock() {
+      const data = document.getElementById('blockData').value;
+      if (!data.trim()) {
+        alert("Please enter some data.");
+        return;
+      }
+
+      fetch('/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ data: data })
+      })
+      .then(res => res.json())
+      .then(result => {
+        document.getElementById('status').innerText = "Block added successfully!";
+        document.getElementById('blockData').value = "";
+        loadChain();
+      })
+      .catch(err => {
+        document.getElementById('status').innerText = "Error adding block.";
+        console.error(err);
+      });
+    }
+
+    function checkChain() {
+      fetch('/check')
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById('integrity').innerText =
+            data.valid ? "✅ Chain is valid." : "❌ " + data.message;
+        });
+    }
+
+    window.onload = loadChain;
+  </script>
+</body>
+</html>
